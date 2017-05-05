@@ -23,7 +23,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
@@ -67,6 +66,7 @@ import edu.uci.ics.crawler4j.crawler.authentication.BasicAuthInfo;
 import edu.uci.ics.crawler4j.crawler.authentication.FormAuthInfo;
 import edu.uci.ics.crawler4j.crawler.authentication.NtAuthInfo;
 import edu.uci.ics.crawler4j.crawler.exceptions.PageBiggerThanMaxSizeException;
+import edu.uci.ics.crawler4j.fetcher.politeness.PolitenessServer;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
 
@@ -78,11 +78,12 @@ public class PageFetcher extends Configurable {
     protected final Object mutex = new Object();
     protected PoolingHttpClientConnectionManager connectionManager;
     protected CloseableHttpClient httpClient;
-    protected long lastFetchTime = 0;
     protected IdleConnectionMonitorThread connectionMonitorThread = null;
+    protected PolitenessServer politenessServer = null;
 
-    public PageFetcher(CrawlConfig config) {
+    public PageFetcher(CrawlConfig config, PolitenessServer politenessServer) {
         super(config);
+        this.politenessServer = politenessServer;
 
         RequestConfig requestConfig = RequestConfig.custom()
                                                    .setExpectContinueEnabled(false)
@@ -245,12 +246,11 @@ public class PageFetcher extends Configurable {
         try {
             request = newHttpUriRequest(toFetchURL);
             // Applying Politeness delay
-            synchronized (mutex) {
-                long now = (new Date()).getTime();
-                if ((now - lastFetchTime) < config.getPolitenessDelay()) {
-                    Thread.sleep(config.getPolitenessDelay() - (now - lastFetchTime));
-                }
-                lastFetchTime = (new Date()).getTime();
+            long politenessDelay = politenessServer.applyPoliteness(webUrl);
+
+            if (politenessDelay != PolitenessServer.NO_POLITENESS_APPLIED) {
+                logger.debug("Applying politeness delay: {} ms", politenessDelay);
+                Thread.sleep(politenessDelay);
             }
 
             CloseableHttpResponse response = httpClient.execute(request);

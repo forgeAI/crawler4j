@@ -29,7 +29,9 @@ import com.sleepycat.je.EnvironmentConfig;
 
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
 import edu.uci.ics.crawler4j.frontier.DocIDServer;
+import edu.uci.ics.crawler4j.frontier.DocIDServerImpl;
 import edu.uci.ics.crawler4j.frontier.Frontier;
+import edu.uci.ics.crawler4j.frontier.FrontierImpl;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
 import edu.uci.ics.crawler4j.url.TLDList;
 import edu.uci.ics.crawler4j.url.URLCanonicalizer;
@@ -75,10 +77,65 @@ public class CrawlController extends Configurable {
     protected DocIDServer docIdServer;
 
     protected final Object waitingLock = new Object();
-    protected final Environment env;
+    protected Environment env = null;
+    
+    public CrawlController(CrawlConfig config, PageFetcher pageFetcher,
+            RobotstxtServer robotstxtServer) throws Exception {
+    	super(config);
+
+    	config.validate();
+    	File folder = new File(config.getCrawlStorageFolder());
+    	if (!folder.exists()) {
+    		if (folder.mkdirs()) {
+    			logger.debug("Created folder: " + folder.getAbsolutePath());
+            } else {
+                throw new Exception(
+                        "couldn't create the storage folder: " + folder.getAbsolutePath() +
+    					" does it already exist ?");
+            }
+    	}
+
+    	TLDList.setUseOnline(config.isOnlineTldListUpdate());
+
+
+    	boolean resumable = config.isResumableCrawling();
+
+    	EnvironmentConfig envConfig = new EnvironmentConfig();
+    	envConfig.setAllowCreate(true);
+    	envConfig.setTransactional(resumable);
+    	envConfig.setLocking(resumable);
+
+    	File envHome = new File(config.getCrawlStorageFolder() + "/frontier");
+    	if (!envHome.exists()) {
+    		if (envHome.mkdir()) {
+    			logger.debug("Created folder: " + envHome.getAbsolutePath());
+    		} else {
+    			throw new Exception(
+    					"Failed creating the frontier folder: " + envHome.getAbsolutePath());
+    		}
+    	}
+
+    	if (!resumable) {
+    		IO.deleteFolderContents(envHome);
+    		logger.info("Deleted contents of: " + envHome +
+    				" ( as you have configured resumable crawling to false )");
+    	}
+
+    	this.env = new Environment(envHome, envConfig);
+
+    	
+    	this.docIdServer = new DocIDServerImpl(env, config);
+    	this.frontier = new FrontierImpl(env, config);
+
+    	this.pageFetcher = pageFetcher;
+    	this.robotstxtServer = robotstxtServer;
+
+    	finished = false;
+    	shuttingDown = false;
+    }
 
     public CrawlController(CrawlConfig config, PageFetcher pageFetcher,
-                           RobotstxtServer robotstxtServer) throws Exception {
+                           RobotstxtServer robotstxtServer, DocIDServer docIdServer, Frontier frontier) throws Exception {
         super(config);
 
         config.validate();
@@ -95,32 +152,8 @@ public class CrawlController extends Configurable {
 
         TLDList.setUseOnline(config.isOnlineTldListUpdate());
 
-        boolean resumable = config.isResumableCrawling();
-
-        EnvironmentConfig envConfig = new EnvironmentConfig();
-        envConfig.setAllowCreate(true);
-        envConfig.setTransactional(resumable);
-        envConfig.setLocking(resumable);
-
-        File envHome = new File(config.getCrawlStorageFolder() + "/frontier");
-        if (!envHome.exists()) {
-            if (envHome.mkdir()) {
-                logger.debug("Created folder: " + envHome.getAbsolutePath());
-            } else {
-                throw new Exception(
-                    "Failed creating the frontier folder: " + envHome.getAbsolutePath());
-            }
-        }
-
-        if (!resumable) {
-            IO.deleteFolderContents(envHome);
-            logger.info("Deleted contents of: " + envHome +
-                        " ( as you have configured resumable crawling to false )");
-        }
-
-        env = new Environment(envHome, envConfig);
-        docIdServer = new DocIDServer(env, config);
-        frontier = new Frontier(env, config);
+        this.docIdServer = docIdServer;
+        this.frontier = frontier;
 
         this.pageFetcher = pageFetcher;
         this.robotstxtServer = robotstxtServer;
@@ -321,8 +354,10 @@ public class CrawlController extends Configurable {
 
                                         finished = true;
                                         waitingLock.notifyAll();
-                                        env.close();
-
+                                        if(env != null) {   // Not and ideal why of closing the DBEnvironment
+                                        	env.close();
+                                        //env.close(); Called during shutdown
+                                        }
                                         return;
                                     }
                                 }
@@ -533,5 +568,11 @@ public class CrawlController extends Configurable {
         this.shuttingDown = true;
         pageFetcher.shutDown();
         frontier.finish();
+        docIdServer.close();
+        frontier.close();
+        if(env != null) {
+        	env.close();
+        }
+        
     }
 }

@@ -17,6 +17,7 @@ package edu.uci.ics.crawler4j.crawler
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule
 import edu.uci.ics.crawler4j.fetcher.PageFetcher
+import edu.uci.ics.crawler4j.fetcher.politeness.PolitenessServerImpl
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer
 import org.junit.Rule
@@ -121,7 +122,7 @@ class CrawlerWithJSTest extends Specification {
                 , cleanupDelaySeconds: 1
         )
 
-        PageFetcher pageFetcher = new PageFetcher(config)
+        PageFetcher pageFetcher = new PageFetcher(config, new PolitenessServerImpl(config))
         RobotstxtServer robotstxtServer = new RobotstxtServer(new RobotstxtConfig(), pageFetcher)
         CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer)
         controller.addSeed "http://localhost:8080/some/index.html"

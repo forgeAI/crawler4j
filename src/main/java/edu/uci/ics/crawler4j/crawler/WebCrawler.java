@@ -466,7 +466,7 @@ public class WebCrawler implements Runnable {
                         webURL.setParentDocid(curURL.getDocid());
                         webURL.setParentUrl(curURL.getURL());
                         int newdocid = docIdServer.getDocId(webURL.getURL());
-                        if (newdocid > 0) {
+                        if (newdocid != -1) {
                             // This is not the first time that this Url is visited. So, we set the
                             // depth to a negative number.
                             webURL.setDepth((short) -1);

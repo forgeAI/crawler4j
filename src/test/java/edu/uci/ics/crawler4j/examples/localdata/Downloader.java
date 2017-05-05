@@ -25,6 +25,7 @@ import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.fetcher.PageFetchResult;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
+import edu.uci.ics.crawler4j.fetcher.politeness.PolitenessServerImpl;
 import edu.uci.ics.crawler4j.parser.HtmlParseData;
 import edu.uci.ics.crawler4j.parser.ParseData;
 import edu.uci.ics.crawler4j.parser.Parser;
@@ -43,7 +44,7 @@ public class Downloader {
     public Downloader() throws InstantiationException, IllegalAccessException {
         CrawlConfig config = new CrawlConfig();
         parser = new Parser(config);
-        pageFetcher = new PageFetcher(config);
+        pageFetcher = new PageFetcher(config, new PolitenessServerImpl(config));
     }
 
     public static void main(String[] args) throws InstantiationException, IllegalAccessException {

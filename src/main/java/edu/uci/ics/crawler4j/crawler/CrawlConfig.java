@@ -66,6 +66,16 @@ public class CrawlConfig {
     private Collection<BasicHeader> defaultHeaders = new HashSet<BasicHeader>();
 
     /**
+     * Maximum amount of hosts to be tracked in the {@link edu.uci.ics.crawler4j.fetcher.politness.PolitenessServer}
+     */
+    private int politenessMaximumHostEntries = 100;
+    
+    /**
+     * Politeness entry expired delay in milliseconds (delay before an entry is removed from the politeness server).
+     */
+    private int politenessEntryExpiredDelay = 800;
+
+    /**
      * Politeness delay in milliseconds (delay between sending two requests to
      * the same host).
      */
@@ -531,6 +541,22 @@ public class CrawlConfig {
      */
     public void setAuthInfos(List<AuthInfo> authInfos) {
         this.authInfos = authInfos;
+    }
+
+    public int getPolitenessEntryExpiredDelay() {
+        return politenessEntryExpiredDelay;
+    }
+
+    public void setPolitenessEntryExpiredDelay(int politenessEntryExpiredDelay) {
+        this.politenessEntryExpiredDelay = politenessEntryExpiredDelay;
+    }
+
+    public int getPolitenessMaximumHostEntries() {
+        return politenessMaximumHostEntries;
+    }
+
+    public void setPolitenessMaximumHostEntries(int politenessMaximumHostEntries) {
+        this.politenessMaximumHostEntries = politenessMaximumHostEntries;
     }
 
     public int getThreadMonitoringDelaySeconds() {

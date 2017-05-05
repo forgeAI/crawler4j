@@ -136,6 +136,15 @@ public class UserAgentDirectives {
 
         @Override
         public int compare(UserAgentDirectives lhs, UserAgentDirectives rhs) {
+        	
+        	if(lhs == null) {
+        		return -1;
+        	}
+        	
+        	if(rhs == null) {
+        		return 1;
+        	}
+        	
             int matchLhs = lhs.match(crawlUserAgent);
             int matchRhs = rhs.match(crawlUserAgent);
             if (matchLhs != matchRhs) {
