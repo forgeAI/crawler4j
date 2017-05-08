@@ -121,11 +121,11 @@ public class WorkQueues {
      * be crawled earlier.
      */
     protected static DatabaseEntry getDatabaseEntryKey(WebURL url) {
-        byte[] keyData = new byte[6];
-        keyData[0] = url.getPriority();
-        keyData[1] = ((url.getDepth() > Byte.MAX_VALUE) ? Byte.MAX_VALUE : (byte) url.getDepth());
-        Util.putIntInByteArray(url.getDocid(), keyData, 2);
-        return new DatabaseEntry(keyData);
+        //byte[] keyData = new byte[6];
+        //keyData[0] = url.getPriority();
+        //keyData[1] = ((url.getDepth() > Byte.MAX_VALUE) ? Byte.MAX_VALUE : (byte) url.getDepth());
+        //Util.putIntInByteArray(url.getDocid(), keyData, 2);
+        return new DatabaseEntry(url.getDocid().getBytes());
     }
 
     public void put(WebURL url) {

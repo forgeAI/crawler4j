@@ -426,7 +426,7 @@ public class CrawlController extends Configurable {
      *            the URL of the seed
      */
     public void addSeed(String pageUrl) {
-        addSeed(pageUrl, -1);
+        addSeed(pageUrl, null);
     }
 
     /**
@@ -448,30 +448,32 @@ public class CrawlController extends Configurable {
      *            the document id that you want to be assigned to this seed URL.
      *
      */
-    public void addSeed(String pageUrl, int docId) {
+    public void addSeed(String pageUrl, String docId) {
         String canonicalUrl = URLCanonicalizer.getCanonicalURL(pageUrl);
+        WebURL webUrl = new WebURL();
+        webUrl.setURL(canonicalUrl);
+        webUrl.setDocid(docId);
+        webUrl.setDepth((short) 0);
         if (canonicalUrl == null) {
             logger.error("Invalid seed URL: {}", pageUrl);
         } else {
-            if (docId < 0) {
-                docId = docIdServer.getDocId(canonicalUrl);
-                if (docId > 0) {
+            if (docId == null ) {
+                docId = docIdServer.getDocId(webUrl);
+                if (docId != null) {
                     logger.trace("This URL is already seen.");
                     return;
                 }
-                docId = docIdServer.getNewDocID(canonicalUrl);
+                docId = docIdServer.getNewDocID(webUrl);
+                webUrl.setDocid(docId);
             } else {
                 try {
-                    docIdServer.addUrlAndDocId(canonicalUrl, docId);
+                    docIdServer.addUrlAndDocId(webUrl, docId);
                 } catch (Exception e) {
                     logger.error("Could not add seed: {}", e.getMessage());
                 }
             }
 
-            WebURL webUrl = new WebURL();
-            webUrl.setURL(canonicalUrl);
-            webUrl.setDocid(docId);
-            webUrl.setDepth((short) 0);
+
             if (robotstxtServer.allows(webUrl)) {
                 frontier.schedule(webUrl);
             } else {
@@ -497,13 +499,17 @@ public class CrawlController extends Configurable {
      *            the document id that you want to be assigned to this URL.
      *
      */
-    public void addSeenUrl(String url, int docId) {
+    public void addSeenUrl(String url, String docId) {
         String canonicalUrl = URLCanonicalizer.getCanonicalURL(url);
+        WebURL webUrl = new WebURL();
+        webUrl.setURL(canonicalUrl);
+        webUrl.setDocid(docId);
+        webUrl.setDepth((short) 0);
         if (canonicalUrl == null) {
             logger.error("Invalid Url: {} (can't cannonicalize it!)", url);
         } else {
             try {
-                docIdServer.addUrlAndDocId(canonicalUrl, docId);
+                docIdServer.addUrlAndDocId(webUrl, docId);
             } catch (Exception e) {
                 logger.error("Could not add seen url: {}", e.getMessage());
             }

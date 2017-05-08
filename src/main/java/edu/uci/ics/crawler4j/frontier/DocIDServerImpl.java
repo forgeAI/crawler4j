@@ -17,6 +17,8 @@
 
 package edu.uci.ics.crawler4j.frontier;
 
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ import com.sleepycat.je.OperationStatus;
 
 import edu.uci.ics.crawler4j.crawler.Configurable;
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
+import edu.uci.ics.crawler4j.url.WebURL;
 import edu.uci.ics.crawler4j.util.Util;
 
 /**
@@ -68,71 +71,72 @@ public class DocIDServerImpl extends Configurable implements DocIDServer {
      * @param url the URL for which the docid is returned.
      * @return the docid of the url if it is seen before. Otherwise -1 is returned.
      */
-    public int getDocId(String url) {
+    public String getDocId(WebURL url) {
         synchronized (mutex) {
             OperationStatus result = null;
             DatabaseEntry value = new DatabaseEntry();
             try {
-                DatabaseEntry key = new DatabaseEntry(url.getBytes());
+                DatabaseEntry key = new DatabaseEntry(url.getURL().getBytes());
                 result = docIDsDB.get(null, key, value, null);
 
             } catch (Exception e) {
                 logger.error("Exception thrown while getting DocID", e);
-                return -1;
+                return null;
             }
 
             if ((result == OperationStatus.SUCCESS) && (value.getData().length > 0)) {
-                return Util.byteArray2Int(value.getData());
+                return new String(value.getData());
             }
 
-            return -1;
+            return null;
         }
     }
 
-    public int getNewDocID(String url) {
-        synchronized (mutex) {
-            try {
-                // Make sure that we have not already assigned a docid for this URL
-                int docID = getDocId(url);
-                if (docID > 0) {
-                    return docID;
-                }
+    public String getNewDocID(WebURL url) {
+    	try {
+    		// Make sure that we have not already assigned a docid for this URL
+    		String docID = getDocId(url);
+    		if (docID != null ) {
+    			return docID;
+    		}
 
-                ++lastDocID;
-                docIDsDB.put(null, new DatabaseEntry(url.getBytes()),
-                             new DatabaseEntry(Util.int2ByteArray(lastDocID)));
-                return lastDocID;
-            } catch (Exception e) {
-                logger.error("Exception thrown while getting new DocID", e);
-                return -1;
-            }
-        }
+    		docID = UUID.randomUUID().toString();
+    		url.setDocid(docID);
+    		docIDsDB.put(null, new DatabaseEntry(url.getURL().getBytes()),
+                             new DatabaseEntry(url.getDocid().getBytes()));
+    		
+    		return docID;
+    	} catch (Exception e) {
+    		logger.error("Exception thrown while getting new DocID", e);
+    		return null;
+    	}
     }
 
-    public void addUrlAndDocId(String url, int docId) throws Exception {
+    public void addUrlAndDocId(WebURL url, String docId) throws Exception {
         synchronized (mutex) {
-            if (docId <= lastDocID) {
+        	
+        	if(docId == null || docId.isEmpty()) {
                 throw new Exception(
-                    "Requested doc id: " + docId + " is not larger than: " + lastDocID);
-            }
+                		"DocId may not be null or empty");
+        	}
+        	
 
             // Make sure that we have not already assigned a docid for this URL
-            int prevDocid = getDocId(url);
-            if (prevDocid > 0) {
-                if (prevDocid == docId) {
+            String prevDocid = getDocId(url);
+            if (prevDocid != null) {
+                if (prevDocid.equals(docId)) {
                     return;
                 }
                 throw new Exception("Doc id: " + prevDocid + " is already assigned to URL: " + url);
             }
 
-            docIDsDB.put(null, new DatabaseEntry(url.getBytes()),
-                         new DatabaseEntry(Util.int2ByteArray(docId)));
-            lastDocID = docId;
+            docIDsDB.put(null, new DatabaseEntry(url.getURL().getBytes()),
+                         new DatabaseEntry(docId.getBytes()));
         }
     }
 
-    public boolean isSeenBefore(String url) {
-        return getDocId(url) != -1;
+    public boolean isSeenBefore(WebURL url) {
+        return getDocId(url) != null;
     }
 
     public final int getDocCount() {
@@ -151,4 +155,18 @@ public class DocIDServerImpl extends Configurable implements DocIDServer {
             logger.error("Exception thrown while closing DocIDServer", e);
         }
     }
+
+
+	@Override
+	public WebURL getWebURL(String url) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean isSeenBefore(String url) {
+		WebURL webUrl = new WebURL();
+		webUrl.setURL(url);
+		return isSeenBefore(webUrl);
+	}
 }

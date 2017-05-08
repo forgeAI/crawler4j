@@ -17,6 +17,8 @@
 
 package edu.uci.ics.crawler4j.frontier;
 
+import edu.uci.ics.crawler4j.url.WebURL;
+
 /**
  * @author Yasser Ganjisaffar
  */
@@ -30,14 +32,21 @@ public interface DocIDServer {
      * @param url the URL for which the docid is returned.
      * @return the docid of the url if it is seen before. Otherwise -1 is returned.
      */
-    public int getDocId(String url);
+    public String getDocId(WebURL url);
 
     /**
      * 
      * @param url
      * @return
      */
-    public int getNewDocID(String url);
+    public String getNewDocID(WebURL url);
+    
+    /**
+     * 
+     * @param url
+     * @return
+     */
+    public WebURL getWebURL(String url);
 
     /**
      * 
@@ -45,7 +54,7 @@ public interface DocIDServer {
      * @param docId
      * @throws Exception
      */
-    public void addUrlAndDocId(String url, int docId) throws Exception;
+    public void addUrlAndDocId(WebURL url, String docId) throws Exception;
 
     /**
      * 

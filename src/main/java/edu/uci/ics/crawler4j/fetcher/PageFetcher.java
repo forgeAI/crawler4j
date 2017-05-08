@@ -245,6 +245,7 @@ public class PageFetcher extends Configurable {
         HttpUriRequest request = null;
         try {
             request = newHttpUriRequest(toFetchURL);
+            
             // Applying Politeness delay
             long politenessDelay = politenessServer.applyPoliteness(webUrl);
 
