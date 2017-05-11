@@ -141,7 +141,9 @@ public class HostDirectives {
      * @param directives The set of directives to add to this host
      */
     public void addDirectives(UserAgentDirectives directives) {
-        rules.add(directives);
+    	if(directives != null) {
+    		rules.add(directives);
+    	}
     }
 
     public long getLastAccessTime() {

@@ -31,6 +31,7 @@ import com.sleepycat.je.OperationStatus;
 
 import edu.uci.ics.crawler4j.crawler.Configurable;
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
+import edu.uci.ics.crawler4j.url.URLCanonicalizer;
 import edu.uci.ics.crawler4j.url.WebURL;
 import edu.uci.ics.crawler4j.util.Util;
 
@@ -165,8 +166,9 @@ public class DocIDServerImpl extends Configurable implements DocIDServer {
 
 	@Override
 	public boolean isSeenBefore(String url) {
+        String canonicalUrl = URLCanonicalizer.getCanonicalURL(url);
 		WebURL webUrl = new WebURL();
-		webUrl.setURL(url);
+		webUrl.setURL(canonicalUrl);
 		return isSeenBefore(webUrl);
 	}
 }
