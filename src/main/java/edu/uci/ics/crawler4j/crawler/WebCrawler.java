@@ -20,6 +20,7 @@ package edu.uci.ics.crawler4j.crawler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.EnglishReasonPhraseCatalog;
@@ -403,6 +404,32 @@ public class WebCrawler implements Runnable {
                         webURL.setDepth(curURL.getDepth());
                         webURL.setDocid(null);
                         webURL.setAnchor(curURL.getAnchor());
+                        
+                        String docId = docIdServer.getDocId(webURL);
+                        
+                        if(docId != null) {
+                        	webURL.setDocid(docId);
+                        } 
+                        
+                        if (shouldVisit(page, webURL)) {
+                            if (!shouldFollowLinksIn(webURL) || robotstxtServer.allows(webURL)) {
+                            	if(docId == null) {
+                            		webURL.setDocid(docIdServer.getNewDocID(webURL));
+                            	}
+
+                            	// The schedule process should set the new docId
+                            	frontier.schedule(webURL);
+                            } else {
+                                logger.debug(
+                                        "Not visiting: {} as per the server's \"robots.txt\" policy",
+                                        webURL.getURL());
+                             }
+                        } else {
+                            logger.debug("Not visiting: {} as per your \"shouldVisit\" policy",
+                                    webURL.getURL());
+                        }
+                        
+                        /**
                         String newDocId = docIdServer.getDocId(webURL);
                         if (newDocId != null) {
                             logger.debug("Redirect page: {} is already seen", curURL);
@@ -423,6 +450,7 @@ public class WebCrawler implements Runnable {
                             logger.debug("Not visiting: {} as per your \"shouldVisit\" policy",
                                          webURL.getURL());
                         }
+                        **/
                     }
                 } else { // All other http codes other than 3xx & 200
                     String description =
@@ -442,8 +470,11 @@ public class WebCrawler implements Runnable {
                         logger.debug("Redirect page: {} has already been seen", curURL);
                         return;
                     }
-                    curURL.setURL(fetchResult.getFetchedUrl());
+                    // TODO: If the curURL is not equal the the fetched url we want to generate a new entry in the db for this guy.
                     
+             
+                    curURL.setURL(fetchResult.getFetchedUrl());
+                    // If this guy already has an Id we would just return that ID
                     curURL.setDocid(docIdServer.getNewDocID(curURL));
                 }
 
@@ -481,6 +512,9 @@ public class WebCrawler implements Runnable {
                             if ((maxCrawlDepth == -1) || (curURL.getDepth() < maxCrawlDepth)) {
                                 if (shouldVisit(page, webURL)) {
                                     if (robotstxtServer.allows(webURL)) {
+                                    	
+                                    	// TODO: Again we should not need to generate a new ID here given that we should already have this guy.
+                                    	// In either case even if we have an id we should just return that and use it.
                                         webURL.setDocid(docIdServer.getNewDocID(webURL));
                                         toSchedule.add(webURL);
                                     } else {
