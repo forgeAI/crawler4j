@@ -500,11 +500,34 @@ public class WebCrawler implements Runnable {
                         webURL.setParentDocid(curURL.getDocid());
                         webURL.setParentUrl(curURL.getURL());
                         String newdocid = docIdServer.getDocId(webURL);
+                        
+                        // TODO:  This would be a candidate for a previously seen Filter.
+                        // But we also do not want to assign a new ID for every page.
+
                         if (newdocid != null) {
                             // This is not the first time that this Url is visited. So, we set the
                             // depth to a negative number.
-                            webURL.setDepth((short) -1);
+                            webURL.setDepth((short) -1);   
                             webURL.setDocid(newdocid);
+                            
+                            if(myController.getConfig().isEnableDuplicateUrlProcessing()) {
+                            	webURL.setDepth((short) (curURL.getDepth() + 1));
+                            	if ((maxCrawlDepth == -1) || (curURL.getDepth() < maxCrawlDepth)) {
+                                    if (shouldVisit(page, webURL)) {
+                                        if (robotstxtServer.allows(webURL)) {
+                                            toSchedule.add(webURL);
+                                        } else {
+                                            logger.debug(
+                                                "Not visiting: {} as per the server's \"robots.txt\" " +
+                                                "policy", webURL.getURL());
+                                        }
+                                    } else {
+                                        logger.debug(
+                                            "Not visiting: {} as per your \"shouldVisit\" policy",
+                                            webURL.getURL());
+                                    }
+                                }
+                            }
                         } else {
                         	
                             webURL.setDocid(null);

@@ -30,6 +30,13 @@ import edu.uci.ics.crawler4j.crawler.authentication.AuthInfo;
 
 public class CrawlConfig {
 
+	
+	/**
+	 * Enable duplicate url processing.
+	 * 
+	 */
+	private boolean enableDuplicateUrlProcessing = false;
+	
     /**
      * The folder which will be used by crawler for storing the intermediate
      * crawl data. The content of this folder should not be modified manually.
@@ -225,6 +232,14 @@ public class CrawlConfig {
         if (maxDepthOfCrawling > Short.MAX_VALUE) {
             throw new Exception("Maximum value for crawl depth is " + Short.MAX_VALUE);
         }
+    }
+    
+    public boolean isEnableDuplicateUrlProcessing() {
+    	return this.enableDuplicateUrlProcessing;
+    }
+    
+    public void setEnableDuplicateUrlProcessing(boolean enabled) {
+    	this.enableDuplicateUrlProcessing = enabled;
     }
 
     public String getCrawlStorageFolder() {
