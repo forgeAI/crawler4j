@@ -401,6 +401,7 @@ public class WebCrawler implements Runnable {
                         webURL.setURL(movedToUrl);
                         webURL.setParentDocid(curURL.getParentDocid());
                         webURL.setParentUrl(curURL.getParentUrl());
+                        webURL.setParentWebURL(curURL.getParentWebURL());
                         webURL.setDepth(curURL.getDepth());
                         webURL.setDocid(null);
                         webURL.setAnchor(curURL.getAnchor());
@@ -499,6 +500,7 @@ public class WebCrawler implements Runnable {
                     for (WebURL webURL : parseData.getOutgoingUrls()) {
                         webURL.setParentDocid(curURL.getDocid());
                         webURL.setParentUrl(curURL.getURL());
+                        webURL.setParentWebURL(curURL);
                         String newdocid = docIdServer.getDocId(webURL);
                         
                         // TODO:  This would be a candidate for a previously seen Filter.

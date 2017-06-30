@@ -37,6 +37,7 @@ public class WebURL implements Serializable {
     private String url;
 
     private String docid;
+    private WebURL parentWebURL;
     private String parentDocid;
     private String parentUrl;
     private short depth;
@@ -47,6 +48,7 @@ public class WebURL implements Serializable {
     private byte priority;
     private String tag;
     private Map<String, String> attributes;
+    private Map<String, String> seedProperties;
 
     /**
      * @return unique document id assigned to this Url.
@@ -120,6 +122,19 @@ public class WebURL implements Serializable {
 
     public void setParentUrl(String parentUrl) {
         this.parentUrl = parentUrl;
+    }
+    
+    /**
+     * @return
+     *      url of the parent page. The parent page is the page in which
+     *      the Url of this page is first observed.
+     */
+    public WebURL getParentWebURL() {
+        return parentWebURL;
+    }
+
+    public void setParentWebURL(WebURL url) {
+        this.parentWebURL = url;
     }
 
     /**
@@ -201,6 +216,14 @@ public class WebURL implements Serializable {
 
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+    }
+    
+    public Map<String, String> getSeedProperties() {
+        return seedProperties;
+    }
+
+    public void setSeedProperties(Map<String, String> properties) {
+        this.seedProperties = properties;
     }
 
     public String getAttribute(String name) {
