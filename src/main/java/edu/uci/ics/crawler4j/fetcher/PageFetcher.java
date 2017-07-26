@@ -20,6 +20,7 @@ package edu.uci.ics.crawler4j.fetcher;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -253,8 +255,9 @@ public class PageFetcher extends Configurable {
                 logger.debug("Applying politeness delay: {} ms", politenessDelay);
                 Thread.sleep(politenessDelay);
             }
+            HttpClientContext context = HttpClientContext.create();
+            CloseableHttpResponse response = httpClient.execute(request, context);
 
-            CloseableHttpResponse response = httpClient.execute(request);
             fetchResult.setEntity(response.getEntity());
             fetchResult.setResponseHeaders(response.getAllHeaders());
 
@@ -284,7 +287,7 @@ public class PageFetcher extends Configurable {
                         fetchResult.setFetchedUrl(uri);
                     }
                 }
-
+                
                 // Checking maximum size
                 if (fetchResult.getEntity() != null) {
                     long size = fetchResult.getEntity().getContentLength();
@@ -303,6 +306,19 @@ public class PageFetcher extends Configurable {
                         throw new PageBiggerThanMaxSizeException(size);
                     }
                 }
+            }
+
+            // Note we might get back a 200 Request as the httpclient will automaticly handle the redirects for us.
+            // In this case we want to still capture that we redirected and gather the new information for the url.
+            List<URI> redirectURIs = context.getRedirectLocations();
+            if (redirectURIs != null && !redirectURIs.isEmpty()) {
+                    for (URI redirectURI : redirectURIs) {
+                            logger.debug("Redirect URI: [{}]", redirectURI);
+                    }
+                    URI finalURI = redirectURIs.get(redirectURIs.size() - 1);
+                    logger.debug("Final URI: [{}]", finalURI);
+                    
+                    fetchResult.setFetchedUrl(URLCanonicalizer.getCanonicalURL(finalURI.toURL().toExternalForm()));
             }
 
             fetchResult.setStatusCode(statusCode);

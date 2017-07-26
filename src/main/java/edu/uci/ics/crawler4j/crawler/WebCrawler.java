@@ -269,33 +269,40 @@ public class WebCrawler implements Runnable {
     @Override
     public void run() {
         onStart();
-        while (true) {
-            List<WebURL> assignedURLs = new ArrayList<>(50);
-            isWaitingForNewURLs = true;
-            frontier.getNextURLs(50, assignedURLs);
-            isWaitingForNewURLs = false;
-            if (assignedURLs.isEmpty()) {
-                if (frontier.isFinished()) {
-                    return;
-                }
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    logger.error("Error occurred", e);
-                }
-            } else {
-                for (WebURL curURL : assignedURLs) {
-                    if (myController.isShuttingDown()) {
-                        logger.info("Exiting because of controller shutdown.");
-                        return;
-                    }
-                    if (curURL != null) {
-                        curURL = handleUrlBeforeProcess(curURL);
-                        processPage(curURL);
-                        frontier.setProcessed(curURL);
-                    }
-                }
-            }
+        try {
+        	while (true) {
+        		List<WebURL> assignedURLs = new ArrayList<>(50);
+        		isWaitingForNewURLs = true;
+        		frontier.getNextURLs(50, assignedURLs);
+        		isWaitingForNewURLs = false;
+        		if (assignedURLs.isEmpty()) {
+        			if (frontier.isFinished()) {
+        				return;
+        			}
+        			try {
+        				Thread.sleep(3000);
+        			} catch (InterruptedException e) {
+        				logger.error("Error occurred", e);
+        			}
+        		} else {
+        			for (WebURL curURL : assignedURLs) {
+        				if (myController.isShuttingDown()) {
+        					logger.info("Exiting because of controller shutdown.");
+        					return;
+        				}
+        				if (curURL != null) {
+        					curURL = handleUrlBeforeProcess(curURL);
+        					processPage(curURL);
+        					frontier.setProcessed(curURL);
+        				}
+        			}
+        		}
+        	}
+        } catch(Exception e) {
+        	logger.error("Thread [{}] failed [{}]", myId, e.getMessage());
+        	e.printStackTrace();
+        } finally {
+        	logger.info("Thread [{}] has shutdown", myId);
         }
     }
 
