@@ -100,6 +100,8 @@ public class PageFetcher extends Configurable {
         if (config.isIncludeHttpsPages()) {
             try { // Fixing: https://code.google.com/p/crawler4j/issues/detail?id=174
                 // By always trusting the ssl certificate
+            	
+            	/*
                 SSLContext sslContext =
                     SSLContexts.custom().loadTrustMaterial(null, new TrustStrategy() {
                         @Override
@@ -109,7 +111,18 @@ public class PageFetcher extends Configurable {
                     }).build();
                 SSLConnectionSocketFactory sslsf =
                     new SniSSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+                    */
+                SSLContext sslcontext = SSLContexts.createDefault();
+
+                // Allow TLSv1 protocol only
+                SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                        sslcontext,
+                        new String[] { "TLSv1" },
+                        null,
+                        SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+                logger.warn("Using custom SSLContext");
                 connRegistryBuilder.register("https", sslsf);
+                
             } catch (Exception e) {
                 logger.warn("Exception thrown while trying to register https");
                 logger.debug("Stacktrace", e);
