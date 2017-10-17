@@ -117,7 +117,7 @@ public class PageFetcher extends Configurable {
                 // Allow TLSv1 protocol only
                 SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
                         sslcontext,
-                        new String[] { "TLSv1" },
+                        new String[] { "TLSv1.2","TLSv1.1", "TLSv1" },
                         null,
                         SSLConnectionSocketFactory.getDefaultHostnameVerifier());
                 logger.warn("Using custom SSLContext");
