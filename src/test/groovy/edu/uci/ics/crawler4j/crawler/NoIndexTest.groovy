@@ -11,6 +11,7 @@ import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
 class NoIndexTest extends Specification {
 
@@ -18,7 +19,7 @@ class NoIndexTest extends Specification {
     public TemporaryFolder temp = new TemporaryFolder()
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule()
+    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort())
 
     def "ignore noindex pages"() {
         given: "an index page with two links"
@@ -81,15 +82,16 @@ class NoIndexTest extends Specification {
         PageFetcher pageFetcher = new PageFetcher(config, new PolitenessServerImpl(config))
         RobotstxtServer robotstxtServer = new RobotstxtServer(new RobotstxtConfig(), pageFetcher)
         CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer)
-        controller.addSeed "http://localhost:8080/some/index.html"
+        String port = String.valueOf(wireMockRule.port())
+        controller.addSeed "http://localhost:" + port + "/some/index.html"
 
         controller.start(NoIndexWebCrawler.class, 1)
 
         then: "noindex pages should be ignored"
         Map<String, Page> visitedPages = (Map<String, Page>)controller.getCrawlersLocalData().get(0);
-        visitedPages.containsKey("http://localhost:8080/some/index.html")
-        visitedPages.containsKey("http://localhost:8080/some/page1.html")
-        !visitedPages.containsKey("http://localhost:8080/some/page2.html")
+        visitedPages.containsKey("http://localhost:" + port + "/some/index.html")
+        visitedPages.containsKey("http://localhost:" + port + "/some/page1.html")
+        !visitedPages.containsKey("http://localhost:" + port + "/some/page2.html")
     }
  }
     

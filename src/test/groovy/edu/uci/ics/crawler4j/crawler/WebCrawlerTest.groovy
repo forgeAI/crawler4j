@@ -11,6 +11,7 @@ import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
 class WebCrawlerTest extends Specification {
 
@@ -18,7 +19,7 @@ class WebCrawlerTest extends Specification {
     public TemporaryFolder temp = new TemporaryFolder()
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule()
+    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort())
 
     static String pageWhichLinksMustNotBeVisited = "page2.html"
     def pageUnvisited = "page4.html"
@@ -82,7 +83,8 @@ class WebCrawlerTest extends Specification {
         PageFetcher pageFetcher = new PageFetcher(config, new PolitenessServerImpl(config))
         RobotstxtServer robotstxtServer = new RobotstxtServer(new RobotstxtConfig(), pageFetcher)
         CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer)
-        controller.addSeed "http://localhost:8080/some/index.html"
+        String port = String.valueOf(wireMockRule.port())
+        controller.addSeed "http://localhost:" + port + "/some/index.html"
 
         controller.start(ShouldNotVisitPageWebCrawler.class, 1)
 

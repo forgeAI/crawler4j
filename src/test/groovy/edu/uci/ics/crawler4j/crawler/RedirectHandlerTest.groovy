@@ -27,6 +27,7 @@ import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
 class RedirectHandlerTest extends Specification {
 
@@ -34,7 +35,7 @@ class RedirectHandlerTest extends Specification {
     public TemporaryFolder temp = new TemporaryFolder()
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule()
+    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort())
 
     def "follow redirects"(int redirectStatus) {
         given: "an index page with a ${redirectStatus}"
@@ -77,14 +78,15 @@ class RedirectHandlerTest extends Specification {
         PageFetcher pageFetcher = new PageFetcher(config, new PolitenessServerImpl(config))
         RobotstxtServer robotstxtServer = new RobotstxtServer(new RobotstxtConfig(), pageFetcher)
         CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer)
-        controller.addSeed "http://localhost:8080/some/index.html"
+        String port = String.valueOf(wireMockRule.port());
+        controller.addSeed "http://localhost:" + port + "/some/index.html"
 
         controller.start(HandleRedirectWebCrawler.class, 1)
 
         then: "envent in WebCrawler will trigger"
         List<Object> crawlerData = controller.getCrawlersLocalData().get(0)
         assert crawlerData.get(0) == 1
-        assert crawlerData.get(1) == "http://localhost:8080/another/index.html"
+        assert crawlerData.get(1) == "http://localhost:" + port + "/another/index.html"
 
         verify(exactly(1), getRequestedFor(urlEqualTo("/some/index.html")))
         verify(exactly(1), getRequestedFor(urlEqualTo("/another/index.html")))

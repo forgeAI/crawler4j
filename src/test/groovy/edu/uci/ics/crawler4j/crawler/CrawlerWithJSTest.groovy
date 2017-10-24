@@ -25,13 +25,14 @@ import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
 class CrawlerWithJSTest extends Specification {
     @Rule
     public TemporaryFolder temp = new TemporaryFolder()
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule()
+    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort())
 
     def "visit javascript files"() {
         given: "an index page"
@@ -125,7 +126,8 @@ class CrawlerWithJSTest extends Specification {
         PageFetcher pageFetcher = new PageFetcher(config, new PolitenessServerImpl(config))
         RobotstxtServer robotstxtServer = new RobotstxtServer(new RobotstxtConfig(), pageFetcher)
         CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer)
-        controller.addSeed "http://localhost:8080/some/index.html"
+        String port = String.valueOf(wireMockRule.port())
+        controller.addSeed "http://localhost:" + port + "/some/index.html"
 
         controller.start(ShouldWebCrawler.class, 1)
 
