@@ -364,7 +364,7 @@ public class WebCrawler implements Runnable {
         // Sub-classed should override this to add their custom functionality
     }
 
-    private void processPage(WebURL curURL) {
+    protected void processPage(WebURL curURL) {
         PageFetchResult fetchResult = null;
         try {
             if (curURL == null) {
@@ -412,6 +412,7 @@ public class WebCrawler implements Runnable {
                         webURL.setDepth(curURL.getDepth());
                         webURL.setDocid(null);
                         webURL.setAnchor(curURL.getAnchor());
+                        webURL.setSeedProperties(curURL.getSeedProperties());
                         
                         String docId = docIdServer.getDocId(webURL);
                         
@@ -508,6 +509,7 @@ public class WebCrawler implements Runnable {
                         webURL.setParentDocid(curURL.getDocid());
                         webURL.setParentUrl(curURL.getURL());
                         webURL.setParentWebURL(curURL);
+                        webURL.setSeedProperties(curURL.getSeedProperties());
                         String newdocid = docIdServer.getDocId(webURL);
                         
                         // TODO:  This would be a candidate for a previously seen Filter.
