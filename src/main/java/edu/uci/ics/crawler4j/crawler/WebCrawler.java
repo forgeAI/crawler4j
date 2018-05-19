@@ -506,26 +506,52 @@ public class WebCrawler implements Runnable {
                     List<WebURL> toSchedule = new ArrayList<>();
                     int maxCrawlDepth = myController.getConfig().getMaxDepthOfCrawling();
                     for (WebURL webURL : parseData.getOutgoingUrls()) {
-                        webURL.setParentDocid(curURL.getDocid());
-                        webURL.setParentUrl(curURL.getURL());
-                        webURL.setParentWebURL(curURL);
-                        webURL.setSeedProperties(curURL.getSeedProperties());
-                        String newdocid = docIdServer.getDocId(webURL);
-                        
-                        // TODO:  This would be a candidate for a previously seen Filter.
-                        // But we also do not want to assign a new ID for every page.
-
-                        if (newdocid != null) {
-                            // This is not the first time that this Url is visited. So, we set the
-                            // depth to a negative number.
-                            webURL.setDepth((short) -1);   
-                            webURL.setDocid(newdocid);
+                    	// [JB] catch any exceptions here so we don't abort the whole page
+                    	try {
+                            webURL.setParentDocid(curURL.getDocid());
+                            webURL.setParentUrl(curURL.getURL());
+                            webURL.setParentWebURL(curURL);
+                            webURL.setSeedProperties(curURL.getSeedProperties());
+                            String newdocid = docIdServer.getDocId(webURL);
                             
-                            if(myController.getConfig().isEnableDuplicateUrlProcessing()) {
-                            	webURL.setDepth((short) (curURL.getDepth() + 1));
-                            	if ((maxCrawlDepth == -1) || (curURL.getDepth() < maxCrawlDepth)) {
+                            // TODO:  This would be a candidate for a previously seen Filter.
+                            // But we also do not want to assign a new ID for every page.
+
+                            if (newdocid != null) {
+                                // This is not the first time that this Url is visited. So, we set the
+                                // depth to a negative number.
+                                webURL.setDepth((short) -1);   
+                                webURL.setDocid(newdocid);
+                                
+                                if(myController.getConfig().isEnableDuplicateUrlProcessing()) {
+                                	webURL.setDepth((short) (curURL.getDepth() + 1));
+                                	if ((maxCrawlDepth == -1) || (curURL.getDepth() < maxCrawlDepth)) {
+                                        if (shouldVisit(page, webURL)) {
+                                            if (robotstxtServer.allows(webURL)) {
+                                                toSchedule.add(webURL);
+                                            } else {
+                                                logger.debug(
+                                                    "Not visiting: {} as per the server's \"robots.txt\" " +
+                                                    "policy", webURL.getURL());
+                                            }
+                                        } else {
+                                            logger.debug(
+                                                "Not visiting: {} as per your \"shouldVisit\" policy",
+                                                webURL.getURL());
+                                        }
+                                    }
+                                }
+                            } else {
+                            	
+                                webURL.setDocid(null);
+                                webURL.setDepth((short) (curURL.getDepth() + 1));
+                                if ((maxCrawlDepth == -1) || (curURL.getDepth() < maxCrawlDepth)) {
                                     if (shouldVisit(page, webURL)) {
                                         if (robotstxtServer.allows(webURL)) {
+                                        	
+                                        	// TODO: Again we should not need to generate a new ID here given that we should already have this guy.
+                                        	// In either case even if we have an id we should just return that and use it.
+                                            webURL.setDocid(docIdServer.getNewDocID(webURL));
                                             toSchedule.add(webURL);
                                         } else {
                                             logger.debug(
@@ -538,31 +564,12 @@ public class WebCrawler implements Runnable {
                                             webURL.getURL());
                                     }
                                 }
-                            }
-                        } else {
-                        	
-                            webURL.setDocid(null);
-                            webURL.setDepth((short) (curURL.getDepth() + 1));
-                            if ((maxCrawlDepth == -1) || (curURL.getDepth() < maxCrawlDepth)) {
-                                if (shouldVisit(page, webURL)) {
-                                    if (robotstxtServer.allows(webURL)) {
-                                    	
-                                    	// TODO: Again we should not need to generate a new ID here given that we should already have this guy.
-                                    	// In either case even if we have an id we should just return that and use it.
-                                        webURL.setDocid(docIdServer.getNewDocID(webURL));
-                                        toSchedule.add(webURL);
-                                    } else {
-                                        logger.debug(
-                                            "Not visiting: {} as per the server's \"robots.txt\" " +
-                                            "policy", webURL.getURL());
-                                    }
-                                } else {
-                                    logger.debug(
-                                        "Not visiting: {} as per your \"shouldVisit\" policy",
-                                        webURL.getURL());
-                                }
-                            }
-                        }
+                            }	
+                    	}
+                    	catch(Exception e) {
+                    		logger.warn("Exception crawling link {} from page: {}", webURL.getURL(), curURL.getURL(), e);
+                    	}
+
                     }
                     frontier.scheduleAll(toSchedule);
                 } else {
